@@ -11,6 +11,26 @@ logger = logging.getLogger(__file__)
 
 
 def get_product_list(page, campaign_id, access_token):
+    """Получить список товаров Яндекс.Маркета с пагинацией.
+
+    Args:
+        page (str): Токен страницы для пагинации, пустая строка для
+        первой страницы.
+        campaign_id (str): ID кампании продавца в Яндекс.Маркете.
+        access_token (str): Токен доступа для API Яндекс.Маркета.
+
+    Returns:
+        dict: Результат запроса с товарами и метаданными пагинации.
+
+    Examples:
+        >>> get_product_list("", "12345", "token_abc")
+        {'offerMappingEntries': [...], 'paging': {...}}
+
+    Incorrect:
+        >>> get_product_list(None, None, None)  # doctest: +SKIP
+        Traceback (most recent call last):
+            ...
+    """
     endpoint_url = "https://api.partner.market.yandex.ru/"
     headers = {
         "Content-Type": "application/json",
@@ -30,6 +50,28 @@ def get_product_list(page, campaign_id, access_token):
 
 
 def update_stocks(stocks, campaign_id, access_token):
+    """Обновить остатки товаров в Яндекс.Маркете.
+
+    Args:
+        stocks (list[dict]): Список словарей с данными об остатках товаров.
+        campaign_id (str): ID кампании продавца в Яндекс.Маркете.
+        access_token (str): Токен доступа для API Яндекс.Маркета.
+
+    Returns:
+        dict: Ответ API после обновления остатков.
+
+    Examples:
+        >>> stocks = [{'sku': '123', 'warehouseId': 'warehouse1',
+        'items': [...]}]
+        >>> update_stocks(stocks, "campaign123", "token456")
+        {'status': 'OK'}
+
+    Incorrect:
+        >>> update_stocks("wrong", 123, None)
+        Traceback (most recent call last):
+        ...
+        AttributeError: 'str' object has no attribute 'get'
+    """
     endpoint_url = "https://api.partner.market.yandex.ru/"
     headers = {
         "Content-Type": "application/json",
@@ -46,6 +88,28 @@ def update_stocks(stocks, campaign_id, access_token):
 
 
 def update_price(prices, campaign_id, access_token):
+    """Обновить цены товаров в Яндекс.Маркете.
+
+    Args:
+        prices (list): Список словарей с данными о ценах товаров.
+        campaign_id (str): ID кампании продавца в Яндекс.Маркете.
+        access_token (str): Токен доступа для API Яндекс.Маркета.
+
+    Returns:
+        dict: Ответ API после обновления цен.
+
+    Examples:
+        >>> prices = [{'id': '123', 'price': {'value': 5990,
+        'currencyId': 'RUR'}}]
+        >>> update_price(prices, "campaign123", "token456")
+        {'status': 'OK'}
+
+    Incorrect:
+        >>> update_price("not_list", None, 5)
+        Traceback (most recent call last):
+        ...
+        AttributeError: 'str' object has no attribute 'get'
+    """
     endpoint_url = "https://api.partner.market.yandex.ru/"
     headers = {
         "Content-Type": "application/json",
@@ -62,7 +126,27 @@ def update_price(prices, campaign_id, access_token):
 
 
 def get_offer_ids(campaign_id, market_token):
-    """Получить артикулы товаров Яндекс маркета"""
+    """Получить все артикулы товаров из Яндекс.Маркета.
+
+    Проходит по всем страницам пагинации и собирает shopSku товаров.
+
+    Args:
+        campaign_id (str): ID кампании продавца в Яндекс.Маркете.
+        market_token (str): Токен доступа для API Яндекс.Маркета.
+
+    Returns:
+        list: Список артикулов товаров (shopSku).
+
+    Examples:
+        >>> get_offer_ids("campaign123", "token456")
+        ['12345', '67890', '54321']
+
+    Incorrect:
+        >>> get_offer_ids(None, None)
+        Traceback (most recent call last):
+            ...
+        AttributeError: 'NoneType' object has no attribute 'get'
+    """
     page = ""
     product_list = []
     while True:
@@ -78,7 +162,22 @@ def get_offer_ids(campaign_id, market_token):
 
 
 def create_stocks(watch_remnants, offer_ids, warehouse_id):
-    # Уберем то, что не загружено в market
+    """Создать структуру данных для обновления остатков в Яндекс.Маркете.
+
+    Args:
+        watch_remnants (list): Список товаров из файла остатков поставщика.
+        offer_ids (list): Список артикулов товаров в Яндекс.Маркете.
+        warehouse_id (str): ID склада в Яндекс.Маркете.
+
+    Returns:
+        list: Список словарей для отправки в API Яндекс.Маркета.
+
+    Incorrect:
+        >>> create_stocks("wrong", 5, None)
+        Traceback (most recent call last):
+            ...
+        AttributeError: 'str' object has no attribute 'get'
+    """
     stocks = list()
     date = str(datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z")
     for watch in watch_remnants:
@@ -123,6 +222,27 @@ def create_stocks(watch_remnants, offer_ids, warehouse_id):
 
 
 def create_prices(watch_remnants, offer_ids):
+    """Создать структуру данных для обновления цен в Яндекс.Маркете.
+
+    Args:
+        watch_remnants (list): Список товаров из файла остатков поставщика.
+        offer_ids (list): Список артикулов товаров в Яндекс.Маркете.
+
+    Returns:
+        list: Список словарей для отправки в API Яндекс.Маркета.
+
+    Examples:
+        >>> remnants = [{'Код': '123', 'Цена': "5'990.00 руб."}]
+        >>> offers = ['123', '456']
+        >>> create_prices(remnants, offers)
+        [{'id': '123', 'price': {'value': 5990, 'currencyId': 'RUR'}}]
+
+    Incorrect:
+        >>> create_prices("wrong", None)
+        Traceback (most recent call last):
+            ...
+        AttributeError: 'str' object has no attribute 'get'
+    """
     prices = []
     for watch in watch_remnants:
         if str(watch.get("Код")) in offer_ids:
@@ -143,6 +263,26 @@ def create_prices(watch_remnants, offer_ids):
 
 
 async def upload_prices(watch_remnants, campaign_id, market_token):
+    """Асинхронно загрузить цены товаров в Яндекс.Маркет.
+
+    Args:
+        watch_remnants (list): Список товаров из файла остатков поставщика.
+        campaign_id (str): ID кампании продавца в Яндекс.Маркете.
+        market_token (str): Токен доступа для API Яндекс.Маркета.
+
+    Returns:
+        list: Список обновленных цен.
+
+    Examples:
+        >>> await upload_prices(remnants, "campaign123", "token456")
+        [{'id': '123', 'price': {'value': 5990, 'currencyId': 'RUR'}}]
+
+    Incorrect:
+        >>> await upload_prices(None, None, None)
+        Traceback (most recent call last):
+            ...
+        TypeError: ...
+    """
     offer_ids = get_offer_ids(campaign_id, market_token)
     prices = create_prices(watch_remnants, offer_ids)
     for some_prices in list(divide(prices, 500)):
@@ -151,6 +291,30 @@ async def upload_prices(watch_remnants, campaign_id, market_token):
 
 
 async def upload_stocks(watch_remnants, campaign_id, market_token, warehouse_id):
+    """Асинхронно загрузить остатки товаров в Яндекс.Маркет.
+
+    Args:
+        watch_remnants (list): Список товаров из файла остатков поставщика.
+        campaign_id (str): ID кампании продавца в Яндекс.Маркете.
+        market_token (str): Токен доступа для API Яндекс.Маркете.
+        warehouse_id (str): ID склада в Яндекс.Маркете.
+
+    Returns:
+        tuple: Кортеж (непустые остатки, все остатки).
+
+    Examples:
+        >>> not_empty, all_stocks = await upload_stocks(remnants,
+        "campaign123", "token456", "warehouse1")
+        >>> len(not_empty)
+        10
+        >>> len(all_stocks)
+        15
+    Incorrect:
+        >>> await upload_stocks(None, None, None, None)
+        Traceback (most recent call last):
+            ...
+        TypeError: ...
+    """
     offer_ids = get_offer_ids(campaign_id, market_token)
     stocks = create_stocks(watch_remnants, offer_ids, warehouse_id)
     for some_stock in list(divide(stocks, 2000)):
@@ -162,6 +326,15 @@ async def upload_stocks(watch_remnants, campaign_id, market_token, warehouse_id)
 
 
 def main():
+    """Основная функция для запуска синхронизации с Яндекс.Маркетом.
+
+    Загружает данные из окружения и выполняет обновление остатков и цен
+    для обеих кампаний (FBS и DBS).
+
+    Examples:
+        >>> main()
+        # Производит обновление данных в Яндекс.Маркете
+    """
     env = Env()
     market_token = env.str("MARKET_TOKEN")
     campaign_fbs_id = env.str("FBS_ID")
